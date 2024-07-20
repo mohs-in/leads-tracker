@@ -1,39 +1,38 @@
-let myLeads = []
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+const firebaseConfig = {
+    databaseURL: "https://leads-tracker-app-bcb70-default-rtdb.firebaseio.com/"
+}
+
+const app = initializeApp(firebaseConfig)
+const database = getDatabase(app)
+const referenceInDB = ref(database, "leads")
+
 const inputEl = document.getElementById("input-el")
 const inputBtn = document.getElementById("input-btn")
 const ulEl = document.getElementById("ul-el")
 const delBtn = document.getElementById('delete-btn')
-const tabBtn = document.getElementById('tab-btn')
 
-let leadsFromLocalStorage = JSON.parse(localStorage.getItem('myLeads'));
-
-if(leadsFromLocalStorage) {
-    myLeads = leadsFromLocalStorage
-    render(myLeads)
-}
+onValue(referenceInDB, function(snapshot) {
+    if(snapshot.exists()) {
+        const snapshotValues = snapshot.val()
+        const leads = Object.values(snapshotValues)
+        render(leads)
+    
+        console.log(leads)
+    }
+   
+})
 
 inputBtn.addEventListener("click", function() {
-    myLeads.push(inputEl.value)
+    push(referenceInDB, inputEl.value)
     inputEl.value = ""
-    localStorage.setItem("myLeads", JSON.stringify(myLeads));
-    render(myLeads)
-    console.log(localStorage.getItem("myLeads"))
-})  
-
-tabBtn.addEventListener('click', () => {
-    chrome.tabs.query({active:true,currentWindow:true}, tabs => {
-        myLeads.push(tabs[0].url)
-        localStorage.setItem("myLeads", JSON.stringify(myLeads) )
-        render(myLeads)
-    })
-
-    
 })
 
 delBtn.addEventListener('dblclick', () => {
-    localStorage.clear(); 
-    myLeads = []
-    render(myLeads)
+    remove(referenceInDB)
+    ulEl.innerHTML = ""
 })
 
 function render(leads) {
@@ -41,8 +40,8 @@ function render(leads) {
     for (let i = 0; i < leads.length; i++) {
         listItems += `
             <li>
-                <a target='_blank' href='${myLeads[i]}'>
-                    ${myLeads[i]}
+                <a target='_blank' href='${leads[i]}'>
+                    ${leads[i]}
                 </a>
             </li>
         `
